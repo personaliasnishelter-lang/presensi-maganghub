@@ -125,10 +125,10 @@
         <span id="badgeSesiHeader" class="badge bg-light text-primary fw-bold">Sesi Evaluasi</span>
       </div>
 
-      <div class="header-meta">
+<div class="header-meta">
         <table>
           <tr>
-            <td class="fw-semibold" style="width: 85px;">Tanggal</td>
+            <td class="fw-semibold" style="width: 105px;">Tanggal</td>
             <td>: <span id="headerTanggal" class="fw-bold">Memuat...</span></td>
           </tr>
           <tr>
@@ -139,10 +139,13 @@
             <td class="fw-semibold">Pemateri</td>
             <td>: <span id="headerPemateri" class="fw-bold">Memuat...</span></td>
           </tr>
+          <tr>
+            <td class="fw-semibold">Durasi Test</td>
+            <td>: <span id="headerDurasi" class="fw-bold">Memuat...</span></td>
+          </tr>
         </table>
       </div>
-    </div>
-
+      
     <div class="card-body p-4">
       <!-- Loading State -->
       <div id="loader" class="text-center py-5">
@@ -354,11 +357,12 @@
     configServer = data;
     document.getElementById('infoDurasi').textContent = data.durasiMenit;
 
-    // Tampilkan Tanggal, Materi, dan Pemateri yang berstatus "Y" di Header
+// Tampilkan Tanggal, Materi, Pemateri, dan Durasi Test di Header
     if (data.infoMateri) {
       document.getElementById('headerTanggal').textContent = data.infoMateri.tanggal;
       document.getElementById('headerMateri').textContent = data.infoMateri.materi;
       document.getElementById('headerPemateri').textContent = data.infoMateri.pemateri;
+      document.getElementById('headerDurasi').textContent = data.durasiMenit + " Menit"; // <-- Baris tambahan
       materiSedangAktif = data.infoMateri.materi;
 
       if (!data.infoMateri.ada) {
