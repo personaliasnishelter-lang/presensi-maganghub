@@ -383,7 +383,27 @@
     }
   }
 
+function normalkanKoordinat(n) {
+    if (n === null || n === undefined) return 0;
+    let str = n.toString().trim().replace(",", ".");
+    // Jika ada lebih dari satu titik (contoh: -7.734.672), hapus semua titik kecuali yang pertama
+    let parts = str.split(".");
+    if (parts.length > 2) {
+      str = parts[0] + "." + parts.slice(1).join("");
+    }
+    let val = parseFloat(str);
+    while (Math.abs(val) > 180) {
+      val = val / 10;
+    }
+    return val;
+  }
+
   function hitungJarakClient(lat1, lon1, lat2, lon2) {
+    lat1 = normalkanKoordinat(lat1);
+    lon1 = normalkanKoordinat(lon1);
+    lat2 = normalkanKoordinat(lat2);
+    lon2 = normalkanKoordinat(lon2);
+
     const R = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
