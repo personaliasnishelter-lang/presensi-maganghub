@@ -146,9 +146,9 @@
           </div>
         </div>
 
-        <div class="mb-3">
+<div class="mb-3">
           <label for="namaPeserta" class="form-label fw-bold">3. Pilih Nama Lengkap Anda <span class="text-danger">*</span></label>
-          <select id="namaPeserta" class="form-select form-select-lg" required>
+          <select id="namaPeserta" class="form-select form-select-lg" onchange="tampilkanFotoPembanding()" required>
             <option value="" selected disabled>-- Pilih Nama Lengkap --</option>
           </select>
           <div class="form-text">Nama yang sudah menyelesaikan sesi ini otomatis disembunyikan dari daftar.</div>
@@ -159,19 +159,40 @@
           <input type="password" id="pinPeserta" class="form-control form-control-lg" maxlength="6" placeholder="Contoh: 0124" required>
         </div>
 
-        <!-- 5. Kamera Live Selfie (100% Berfungsi di GitHub Pages baik Laptop maupun HP) -->
+<!-- 5. Sandingan Foto Master (Kiri) & Kamera Live Selfie (Kanan) -->
         <div class="mb-4 text-center">
-          <label class="form-label fw-bold d-block text-start">5. Verifikasi Swafoto (Live Selfie) <span class="text-danger">*</span></label>
-          <div class="camera-box mb-2">
-            <video id="videoKamera" autoplay playsinline muted></video>
-            <img id="hasilSelfie" style="display:none;" alt="Selfie Peserta">
+          <label class="form-label fw-bold d-block text-start">5. Verifikasi Swafoto & Pembanding Wajah <span class="text-danger">*</span></label>
+          
+          <div class="row g-3 justify-content-center align-items-center mb-2">
+            <!-- Kotak Kiri: Foto Pembanding dari Google Drive -->
+            <div class="col-md-6">
+              <div class="p-2 bg-light border rounded-3">
+                <span class="badge bg-secondary mb-2">Foto Terdaftar (Master)</span>
+                <div class="camera-box bg-white d-flex align-items-center justify-content-center border">
+                  <span id="teksBelumPilihNama" class="text-muted small px-3">Pilih Nama Peserta di nomor 3 untuk menampilkan Foto Master</span>
+                  <img id="imgFotoMaster" style="display:none; width:100%; height:100%; object-fit:cover;" alt="Foto Master Peserta" referrerpolicy="no-referrer">
+                </div>
+              </div>
+            </div>
+
+            <!-- Kotak Kanan: Kamera Live Selfie -->
+            <div class="col-md-6">
+              <div class="p-2 bg-light border rounded-3">
+                <span class="badge bg-primary mb-2">Kamera Saat Ini (Live)</span>
+                <div class="camera-box">
+                  <video id="videoKamera" autoplay playsinline muted></video>
+                  <img id="hasilSelfie" style="display:none;" alt="Selfie Peserta">
+                </div>
+              </div>
+            </div>
           </div>
+
           <canvas id="canvasSelfie" width="320" height="240" style="display:none;"></canvas>
           <div class="d-flex justify-content-center gap-2 mt-2">
             <button type="button" id="btnAmbilFoto" class="btn btn-primary btn-sm" onclick="ambilSelfie()">📸 Ambil Foto Wajah</button>
             <button type="button" id="btnUlangFoto" class="btn btn-outline-secondary btn-sm" style="display:none;" onclick="ulangSelfie()">🔄 Foto Ulang</button>
           </div>
-          <small id="statusKameraTeks" class="text-muted d-block mt-1">Pastikan wajah Anda terlihat jelas di kotak kamera.</small>
+          <small id="statusKameraTeks" class="text-muted d-block mt-1">Pastikan wajah Anda di kamera kanan sesuai dengan foto terdaftar di sebelah kiri.</small>
         </div>
 
         <button type="button" id="btnMulaiUjian" class="btn btn-primary btn-lg w-100 fw-bold" onclick="verifikasiDanMulai()">
@@ -343,6 +364,22 @@
         opt.textContent = nama;
         selectNama.appendChild(opt);
       });
+    }
+  }
+
+  function tampilkanFotoPembanding() {
+    const nama = document.getElementById('namaPeserta').value;
+    const imgMaster = document.getElementById('imgFotoMaster');
+    const teksInfo = document.getElementById('teksBelumPilihNama');
+
+    if (nama && configServer.mapFoto && configServer.mapFoto[nama]) {
+      imgMaster.src = configServer.mapFoto[nama];
+      imgMaster.style.display = 'block';
+      teksInfo.style.display = 'none';
+    } else {
+      imgMaster.style.display = 'none';
+      teksInfo.style.display = 'block';
+      teksInfo.textContent = "Foto Master belum dilampirkan di Sheet Peserta Kolom C.";
     }
   }
 
