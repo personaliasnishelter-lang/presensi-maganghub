@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evaluasi MagangHub - Shelter Indonesia</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f4f6f9;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .header-banner {
+      background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+      color: white;
+      border-radius: 12px 12px 0 0;
+      padding: 24px;
+    }
+    .card-main {
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .sesi-selector .btn-check:checked + .btn-outline-primary {
+      background-color: #0d47a1;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 10px rgba(13, 71, 161, 0.25);
+    }
+    .gps-box {
+      border-radius: 8px;
+      padding: 12px 15px;
+      font-size: 0.9rem;
+    }
+    .sticky-timer {
+      position: sticky;
+      top: 10px;
+      z-index: 1020;
+      background: #ffffff;
+      border: 2px solid #0d47a1;
+      border-radius: 10px;
+      padding: 12px 18px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+      margin-bottom: 20px;
+    }
+    .timer-danger {
+      border-color: #dc3545 !important;
+      background-color: #fff5f5 !important;
+      animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.01); }
+      100% { transform: scale(1); }
+    }
+    .question-box {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .sig-container {
+      border: 2px dashed #94a3b8;
+      border-radius: 8px;
+      background-color: #ffffff;
+      position: relative;
+      height: 180px;
+      touch-action: none;
+    }
+    #canvasTTD {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+    .camera-box {
+      width: 100%;
+      max-width: 320px;
+      height: 240px;
+      background: #000;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 0 auto;
+      position: relative;
+    }
+    video, #hasilSelfie {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .integrity-box {
+      background-color: #fff8e1;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body oncontextmenu="return false;" oncopy="return false;" oncut="return false;" onpaste="return false;">
+
+<div class="container py-4" style="max-width: 760px;">
+  <div class="card card-main">
+    <div class="header-banner">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="badge bg-warning text-dark">Senin, 16 November 2026</span>
+        <span id="badgeSesiHeader" class="badge bg-light text-primary fw-bold">Sesi Evaluasi</span>
+      </div>
+      <h4 class="fw-bold mb-1">Presensi & Evaluasi Harian</h4>
+      <p class="mb-0 opacity-75">MagangHub Onboarding Camp — PT Shelter Indonesia Gemilang</p>
+    </div>
+
+    <div class="card-body p-4">
+      <!-- Loading State -->
+      <div id="loader" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-3 text-muted">Menghubungkan ke server & memindai titik Multi-Geo...</p>
+      </div>
+
+      <!-- TAHAP 1: VERIFIKASI IDENTITAS, SESI, MULTI-GEO GPS & SELFIE -->
+      <div id="stepVerifikasi" style="display: none;">
+        
+        <div class="mb-4">
+          <label class="form-label fw-bold">1. Pilih Sesi Evaluasi <span class="text-danger">*</span></label>
+          <div class="row g-2 sesi-selector" role="group">
+            <div class="col-6">
+              <input type="radio" class="btn-check" name="pilihanSesi" id="sesiPre" value="Pre-Test" onchange="gantiSesi()">
+              <label class="btn btn-outline-primary w-100 py-2" for="sesiPre">☀️ Pre-Test (Pagi)</label>
+            </div>
+            <div class="col-6">
+              <input type="radio" class="btn-check" name="pilihanSesi" id="sesiPost" value="Post-Test" onchange="gantiSesi()">
+              <label class="btn btn-outline-primary w-100 py-2" for="sesiPost">🌇 Post-Test (Sore)</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4" id="wrapperGPS">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label class="form-label fw-bold mb-0">2. Validasi Titik Lokasi (Pusat / Cabang / Izin Rumah) <span class="text-danger">*</span></label>
+            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="cekLokasiGPS()">🔄 Perbarui GPS</button>
+          </div>
+          <div id="boxStatusGPS" class="gps-box alert alert-secondary mb-0">
+            ⏳ Sedang mendeteksi titik koordinat GPS perangkat Anda...
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="namaPeserta" class="form-label fw-bold">3. Pilih Nama Lengkap Anda <span class="text-danger">*</span></label>
+          <select id="namaPeserta" class="form-select form-select-lg" required>
+            <option value="" selected disabled>-- Pilih Nama Lengkap --</option>
+          </select>
+          <div class="form-text">Nama yang sudah menyelesaikan sesi ini otomatis disembunyikan dari daftar.</div>
+        </div>
+
+        <div class="mb-4">
+          <label for="pinPeserta" class="form-label fw-bold">4. Masukkan 4 Digit Terakhir NIK / PIN <span class="text-danger">*</span></label>
+          <input type="password" id="pinPeserta" class="form-control form-control-lg" maxlength="6" placeholder="Contoh: 0124" required>
+        </div>
+
+        <!-- 5. Kamera Live Selfie (100% Berfungsi di GitHub Pages baik Laptop maupun HP) -->
+        <div class="mb-4 text-center">
+          <label class="form-label fw-bold d-block text-start">5. Verifikasi Swafoto (Live Selfie) <span class="text-danger">*</span></label>
+          <div class="camera-box mb-2">
+            <video id="videoKamera" autoplay playsinline muted></video>
+            <img id="hasilSelfie" style="display:none;" alt="Selfie Peserta">
+          </div>
+          <canvas id="canvasSelfie" width="320" height="240" style="display:none;"></canvas>
+          <div class="d-flex justify-content-center gap-2 mt-2">
+            <button type="button" id="btnAmbilFoto" class="btn btn-primary btn-sm" onclick="ambilSelfie()">📸 Ambil Foto Wajah</button>
+            <button type="button" id="btnUlangFoto" class="btn btn-outline-secondary btn-sm" style="display:none;" onclick="ulangSelfie()">🔄 Foto Ulang</button>
+          </div>
+          <small id="statusKameraTeks" class="text-muted d-block mt-1">Pastikan wajah Anda terlihat jelas di kotak kamera.</small>
+        </div>
+
+        <button type="button" id="btnMulaiUjian" class="btn btn-primary btn-lg w-100 fw-bold" onclick="verifikasiDanMulai()">
+          Verifikasi & Mulai Pengerjaan (<span id="infoDurasi">15</span> Menit)
+        </button>
+      </div>
+
+      <!-- TAHAP 2: LEMBAR SOAL & TIMER -->
+      <form id="pretestForm" style="display: none;" onsubmit="kirimData(event, false)">
+        <div id="timerBar" class="sticky-timer d-flex justify-content-between align-items-center">
+          <div>
+            <span id="badgeSesiAktif" class="badge bg-primary mb-1">Pre-Test</span>
+            <strong id="labelNamaAktif" class="text-dark d-block"></strong>
+          </div>
+          <div class="text-end">
+            <small class="text-muted d-block">Sisa Waktu:</small>
+            <span id="teksTimer" class="fs-4 fw-bold text-primary">00:00</span>
+          </div>
+        </div>
+
+        <div id="alertCurang" class="alert alert-danger py-2 small" style="display: none;">
+          ⚠️ <strong>Peringatan Sistem:</strong> Anda terdeteksi keluar dari layar ujian sebanyak <strong id="angkaCurang">0</strong> kali. Aktivitas ini tercatat otomatis di Dashboard Pengawas.
+        </div>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <label class="form-label fw-bold mb-0">Daftar Pertanyaan Pilihan Ganda</label>
+            <span id="badgeJumlahSoal" class="badge bg-secondary">0 Soal</span>
+          </div>
+          <div id="containerSoal"></div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Pakta Integritas Pengerjaan <span class="text-danger">*</span></label>
+          <div class="integrity-box">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="cekIntegritas" required>
+              <label class="form-check-label fw-semibold text-dark" for="cekIntegritas">
+                "Saya kerjakan sendiri soal pre test ini tanpa bantuan AI dan orang lain agar bisa mengetahui kemampuan saya secara objektif."
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label fw-bold mb-0">Tanda Tangan Peserta (TTD) <span class="text-danger">*</span></label>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="hapusTTD()">Ulangi TTD</button>
+          </div>
+          <div class="sig-container">
+            <canvas id="canvasTTD"></canvas>
+          </div>
+          <small class="text-muted">Gunakan jari atau kursor mouse untuk menandatangani kotak di atas.</small>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn btn-success btn-lg w-100 fw-bold mt-2">
+          Kirim Daftar Hadir & Jawaban
+        </button>
+      </form>
+
+      <!-- TAHAP 3: TAMPILAN SUKSES -->
+      <div id="successView" style="display: none;" class="text-center py-5">
+        <div class="mb-3 text-success">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+          </svg>
+        </div>
+        <h4 id="judulSukses" class="fw-bold">Evaluasi Berhasil Tercatat!</h4>
+        <p id="pesanSuksesSub" class="text-muted mb-4">Terima kasih atas kejujuran dan komitmen Anda hari ini.</p>
+        <div class="card bg-light border-0 mx-auto mb-3" style="max-width: 360px;">
+          <div class="card-body">
+            <span id="labelSkorAkhir" class="text-muted small d-block">Skor Anda:</span>
+            <h1 id="skorTampil" class="display-4 fw-bold text-primary mb-0">0</h1>
+            <small id="detailBenar" class="text-secondary d-block mb-2"></small>
+            <div id="boxGainScore" style="display: none;" class="border-top pt-2 mt-2"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // =========================================================================
+  // TEMPELKAN URL WEB APP (/exec) GOOGLE APPS SCRIPT ANDA DI DALAM TANDA KUTIP INI:
+  const GAS_API_URL = "https://script.google.com/macros/s/AKfycb.../exec";
+  // =========================================================================
+
+  let configServer = {};
+  let canvas, ctx;
+  let sedangMenggambar = false;
+  let adaCoretan = false;
+  let daftarSoalClient = [];
+  let dataSelfieBase64 = "";
+  let streamKamera = null;
+
+  let userLat = null;
+  let userLng = null;
+  let labelLokasiTerdekat = "";
+  let gpsLolos = false;
+
+  let sisaDetik = 0;
+  let intervalTimer = null;
+  let ujianSedangBerjalan = false;
+  let jumlahPindahTab = 0;
+
+  // Fungsi komunikasi antara GitHub Pages dan Google Apps Script
+  async function panggilGAS(action, payload = {}) {
+    const response = await fetch(GAS_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: action, payload: payload })
+    });
+    return await response.json();
+  }
+
+  window.onload = function() {
+    panggilGAS("getDataAwalSesi")
+      .then(initHalaman)
+      .catch(function(err) {
+        alert("Gagal terhubung ke Google Sheets. Pastikan URL GAS_API_URL sudah benar: " + err.message);
+      });
+  };
+
+  function initHalaman(data) {
+    configServer = data;
+    document.getElementById('infoDurasi').textContent = data.durasiMenit;
+
+    if (data.sesiDefault === "Post-Test") {
+      document.getElementById('sesiPost').checked = true;
+    } else {
+      document.getElementById('sesiPre').checked = true;
+    }
+
+    gantiSesi();
+
+    if (data.wajibGPS) {
+      cekLokasiGPS();
+    } else {
+      document.getElementById('wrapperGPS').style.display = 'none';
+      gpsLolos = true;
+    }
+
+    document.getElementById('loader').style.display = 'none';
+    document.getElementById('stepVerifikasi').style.display = 'block';
+    nyalakanKamera();
+  }
+
+  function gantiSesi() {
+    const sesiTerpilih = document.querySelector('input[name="pilihanSesi"]:checked').value;
+    document.getElementById('badgeSesiHeader').textContent = "Sesi " + sesiTerpilih;
+
+    const daftarNama = sesiTerpilih === "Pre-Test" ? configServer.belumPreTest : configServer.belumPostTest;
+    const selectNama = document.getElementById('namaPeserta');
+    selectNama.innerHTML = '<option value="" selected disabled>-- Pilih Nama Lengkap --</option>';
+
+    if (!daftarNama || daftarNama.length === 0) {
+      let opt = document.createElement('option');
+      opt.textContent = "-- Seluruh peserta sudah mengisi " + sesiTerpilih + " hari ini --";
+      opt.disabled = true;
+      selectNama.appendChild(opt);
+    } else {
+      daftarNama.forEach(function(nama) {
+        let opt = document.createElement('option');
+        opt.value = nama;
+        opt.textContent = nama;
+        selectNama.appendChild(opt);
+      });
+    }
+  }
+
+  function hitungJarakClient(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.round(R * c);
+  }
+
+  function cekLokasiGPS() {
+    const box = document.getElementById('boxStatusGPS');
+    box.className = "gps-box alert alert-secondary mb-0";
+    box.innerHTML = "⏳ Sedang mengunci titik koordinat GPS Anda...";
+    gpsLolos = false;
+
+    if (!navigator.geolocation) {
+      box.className = "gps-box alert alert-danger mb-0";
+      box.innerHTML = "❌ Browser Anda tidak mendukung fitur GPS.";
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      function(pos) {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+
+        const daftarTitik = configServer.daftarMultiGeo || [];
+        if (daftarTitik.length === 0) {
+          gpsLolos = true;
+          labelLokasiTerdekat = "Tanpa Batas Lokasi";
+          box.className = "gps-box alert alert-info mb-0";
+          box.innerHTML = "ℹ️ Daftar lokasi di Sheet masih kosong. Validasi GPS dilewati.";
+          return;
+        }
+
+        let titikTerdekat = null;
+        let jarakMinimum = 999999999;
+
+        daftarTitik.forEach(function(lok) {
+          const d = hitungJarakClient(lok.lat, lok.lng, userLat, userLng);
+          if (d < jarakMinimum) {
+            jarakMinimum = d;
+            titikTerdekat = lok;
+          }
+        });
+
+        labelLokasiTerdekat = `${titikTerdekat.nama} (${jarakMinimum} m)`;
+
+        if (jarakMinimum <= titikTerdekat.radius) {
+          gpsLolos = true;
+          box.className = "gps-box alert alert-success mb-0";
+          box.innerHTML = `✅ <strong>Lokasi Terverifikasi — ${titikTerdekat.nama}:</strong> Jarak Anda <strong>${jarakMinimum} meter</strong> dari titik lokasi (Radius maks: ${titikTerdekat.radius} m).`;
+        } else {
+          gpsLolos = false;
+          box.className = "gps-box alert alert-danger mb-0";
+          box.innerHTML = `❌ <strong>Di Luar Radius Lokasi:</strong> Titik terdekat adalah <strong>${titikTerdekat.nama}</strong> dengan jarak <strong>${jarakMinimum} meter</strong> (Batas: ${titikTerdekat.radius} m).<br><small class="text-muted">Koordinat Anda saat ini: ${userLat.toFixed(6)}, ${userLng.toFixed(6)}</small>`;
+        }
+      },
+      function() {
+        gpsLolos = false;
+        box.className = "gps-box alert alert-danger mb-0";
+        box.innerHTML = "❌ Gagal membaca GPS. Pastikan Location/GPS menyala dan izinkan akses lokasi pada browser.";
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  }
+
+  function nyalakanKamera() {
+    const video = document.getElementById('videoKamera');
+    const infoTeks = document.getElementById('statusKameraTeks');
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .catch(function() {
+        return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      })
+      .then(function(stream) {
+        if (!stream) return;
+        streamKamera = stream;
+        video.srcObject = stream;
+        video.play();
+        infoTeks.innerHTML = "<span class='text-success'>✅ Kamera aktif. Silakan klik <b>📸 Ambil Foto Wajah</b>.</span>";
+      })
+      .catch(function() {
+        infoTeks.innerHTML = "<span class='text-danger'>⚠️ Mohon klik Allow/Izinkan Kamera pada pop-up browser Anda.</span>";
+      });
+  }
+
+  function ambilSelfie() {
+    const video = document.getElementById('videoKamera');
+    const canvasFoto = document.getElementById('canvasSelfie');
+    const imgHasil = document.getElementById('hasilSelfie');
+    const konteks = canvasFoto.getContext('2d');
+
+    if (!video.srcObject || video.videoWidth === 0) {
+      alert("Kamera belum siap. Pastikan Anda sudah mengizinkan akses kamera di browser.");
+      return;
+    }
+
+    konteks.drawImage(video, 0, 0, 320, 240);
+    dataSelfieBase64 = canvasFoto.toDataURL('image/jpeg', 0.7);
+
+    video.style.display = 'none';
+    imgHasil.src = dataSelfieBase64;
+    imgHasil.style.display = 'block';
+
+    document.getElementById('btnAmbilFoto').style.display = 'none';
+    document.getElementById('btnUlangFoto').style.display = 'inline-block';
+  }
+
+  function ulangSelfie() {
+    dataSelfieBase64 = "";
+    document.getElementById('videoKamera').style.display = 'block';
+    document.getElementById('hasilSelfie').style.display = 'none';
+    document.getElementById('btnAmbilFoto').style.display = 'inline-block';
+    document.getElementById('btnUlangFoto').style.display = 'none';
+  }
+
+  function matikanKamera() {
+    if (streamKamera) {
+      streamKamera.getTracks().forEach(track => track.stop());
+    }
+  }
+
+  function verifikasiDanMulai() {
+    const sesi = document.querySelector('input[name="pilihanSesi"]:checked').value;
+    const nama = document.getElementById('namaPeserta').value;
+    const pin = document.getElementById('pinPeserta').value;
+
+    if (configServer.wajibGPS && !gpsLolos) {
+      alert("Anda belum berada di dalam radius lokasi yang terdaftar.");
+      return;
+    }
+    if (!nama) {
+      alert("Silakan pilih Nama Lengkap Anda terlebih dahulu.");
+      return;
+    }
+    if (!pin) {
+      alert("Silakan masukkan 4 digit terakhir NIK / PIN Anda.");
+      return;
+    }
+    if (!dataSelfieBase64) {
+      alert("Silakan ambil foto wajah (Selfie) terlebih dahulu.");
+      return;
+    }
+
+    const btn = document.getElementById('btnMulaiUjian');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memverifikasi Lokasi & Mengacak Soal...';
+
+    panggilGAS("mulaiUjianPeserta", {
+      nama: nama,
+      pin: pin,
+      lat: userLat,
+      lng: userLng
+    }).then(function(res) {
+      if (!res.sukses) {
+        alert(res.pesan);
+        btn.disabled = false;
+        btn.innerHTML = `Verifikasi & Mulai Pengerjaan (${configServer.durasiMenit} Menit)`;
+        return;
+      }
+      matikanKamera();
+      labelLokasiTerdekat = res.infoLokasi;
+      tampilkanLembarSoal(sesi, nama, res.soal, res.durasiDetik);
+    }).catch(function(err) {
+      alert("Terjadi kesalahan koneksi: " + err.message);
+      btn.disabled = false;
+      btn.innerHTML = `Verifikasi & Mulai Pengerjaan (${configServer.durasiMenit} Menit)`;
+    });
+  }
+
+  function tampilkanLembarSoal(sesi, nama, soal, durasiDetik) {
+    document.getElementById('stepVerifikasi').style.display = 'none';
+    document.getElementById('pretestForm').style.display = 'block';
+    document.getElementById('badgeSesiAktif').textContent = sesi;
+    document.getElementById('labelNamaAktif').textContent = nama;
+
+    daftarSoalClient = soal;
+    document.getElementById('badgeJumlahSoal').textContent = daftarSoalClient.length + " Soal";
+
+    const container = document.getElementById('containerSoal');
+    container.innerHTML = '';
+    const hurufOpsi = ['A', 'B', 'C', 'D', 'E'];
+
+    daftarSoalClient.forEach(function(item, indexTampil) {
+      let box = document.createElement('div');
+      box.className = 'question-box';
+      
+      let htmlOpsi = '';
+      item.opsi.forEach(function(teksOpsi, idxOpsi) {
+        let idRadio = 'soal_' + item.noAsli + '_opsi_' + idxOpsi;
+        htmlOpsi += `
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="radio" name="soal_${item.noAsli}" id="${idRadio}" value="${escapeHtml(teksOpsi)}" required>
+            <label class="form-check-label" for="${idRadio}" style="cursor:pointer;">
+              <strong>${hurufOpsi[idxOpsi]}.</strong> ${escapeHtml(teksOpsi)}
+            </label>
+          </div>
+        `;
+      });
+
+      box.innerHTML = `
+        <p class="fw-semibold mb-3">${indexTampil + 1}. ${escapeHtml(item.pertanyaan)}</p>
+        ${htmlOpsi}
+      `;
+      container.appendChild(box);
+    });
+
+    initSignatureCanvas();
+    mulaiHitungMundur(durasiDetik);
+    aktifkanSensorPindahTab();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function mulaiHitungMundur(totalDetik) {
+    sisaDetik = totalDetik;
+    ujianSedangBerjalan = true;
+    perbaruiTampilanTimer();
+
+    intervalTimer = setInterval(function() {
+      sisaDetik--;
+      perbaruiTampilanTimer();
+
+      if (sisaDetik <= 120) {
+        document.getElementById('timerBar').classList.add('timer-danger');
+        document.getElementById('teksTimer').classList.replace('text-primary', 'text-danger');
+      }
+
+      if (sisaDetik <= 0) {
+        clearInterval(intervalTimer);
+        kirimData(null, true);
+      }
+    }, 1000);
+  }
+
+  function perbaruiTampilanTimer() {
+    const menit = Math.floor(sisaDetik / 60);
+    const detik = sisaDetik % 60;
+    const tampilMenit = menit < 10 ? "0" + menit : menit;
+    const tampilDetik = detik < 10 ? "0" + detik : detik;
+    document.getElementById('teksTimer').textContent = tampilMenit + ":" + tampilDetik;
+  }
+
+  function aktifkanSensorPindahTab() {
+    document.addEventListener("visibilitychange", function() {
+      if (document.hidden && ujianSedangBerjalan) {
+        jumlahPindahTab++;
+        document.getElementById('angkaCurang').textContent = jumlahPindahTab;
+        document.getElementById('alertCurang').style.display = 'block';
+      }
+    });
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+  }
+
+  function initSignatureCanvas() {
+    canvas = document.getElementById('canvasTTD');
+    ctx = canvas.getContext('2d');
+    
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#0f172a';
+
+    function posisiKursor(e) {
+      const r = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - r.left, y: clientY - r.top };
+    }
+
+    function mulaiGambar(e) {
+      e.preventDefault();
+      sedangMenggambar = true;
+      adaCoretan = true;
+      const pos = posisiKursor(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+    }
+
+    function gambarGaris(e) {
+      if (!sedangMenggambar) return;
+      e.preventDefault();
+      const pos = posisiKursor(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+    }
+
+    function selesaiGambar(e) {
+      if (!sedangMenggambar) return;
+      e.preventDefault();
+      sedangMenggambar = false;
+    }
+
+    canvas.addEventListener('mousedown', mulaiGambar);
+    canvas.addEventListener('mousemove', gambarGaris);
+    window.addEventListener('mouseup', selesaiGambar);
+
+    canvas.addEventListener('touchstart', mulaiGambar, { passive: false });
+    canvas.addEventListener('touchmove', gambarGaris, { passive: false });
+    window.addEventListener('touchend', selesaiGambar);
+  }
+
+  function hapusTTD() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    adaCoretan = false;
+  }
+
+  function kirimData(e, isAutoSubmit) {
+    if (e) e.preventDefault();
+
+    if (!isAutoSubmit && !adaCoretan) {
+      alert("Mohon bubuhkan tanda tangan Anda terlebih dahulu pada kotak yang tersedia.");
+      return;
+    }
+
+    ujianSedangBerjalan = false;
+    clearInterval(intervalTimer);
+
+    const btn = document.getElementById('btnSubmit');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan Data & Menghitung Nilai...';
+
+    let jawabanTerkumpul = {};
+    daftarSoalClient.forEach(function(item) {
+      const dipilih = document.querySelector(`input[name="soal_${item.noAsli}"]:checked`);
+      if (dipilih) {
+        jawabanTerkumpul[item.noAsli] = dipilih.value;
+      }
+    });
+
+    const sesiAktif = document.querySelector('input[name="pilihanSesi"]:checked').value;
+
+    const payload = {
+      sesi: sesiAktif,
+      nama: document.getElementById('namaPeserta').value,
+      jawaban: jawabanTerkumpul,
+      ttd: adaCoretan ? canvas.toDataURL('image/png') : "",
+      selfie: dataSelfieBase64,
+      pindahTab: jumlahPindahTab,
+      autoSubmit: isAutoSubmit,
+      lat: userLat || 0,
+      lng: userLng || 0,
+      infoLokasi: labelLokasiTerdekat
+    };
+
+    panggilGAS("submitUjian", payload)
+      .then(function(res) {
+        if (res.sukses) {
+          document.getElementById('pretestForm').style.display = 'none';
+          document.getElementById('judulSukses').textContent = res.sesi + " Berhasil Tercatat!";
+          document.getElementById('labelSkorAkhir').textContent = "Skor " + res.sesi + " Anda:";
+
+          if (isAutoSubmit) {
+            document.getElementById('pesanSuksesSub').innerHTML = "<span class='text-danger fw-semibold'>Waktu pengerjaan habis! Jawaban Anda yang sudah terisi telah disimpan secara otomatis.</span>";
+          }
+          document.getElementById('skorTampil').textContent = res.nilai;
+          document.getElementById('detailBenar').textContent = `Benar ${res.benar} dari ${res.total} Soal`;
+
+          if (res.sesi === "Post-Test" && res.skorPreTest !== null) {
+            const selisih = res.nilai - res.skorPreTest;
+            const tanda = selisih > 0 ? "+" : "";
+            const warna = selisih >= 0 ? "text-success" : "text-danger";
+            const boxGain = document.getElementById('boxGainScore');
+            boxGain.style.display = 'block';
+            boxGain.innerHTML = `
+              <small class="text-muted d-block">Skor Pre-Test Pagi: <strong>${res.skorPreTest}</strong></small>
+              <span class="fw-bold ${warna}">Perubahan Skor (Gain): ${tanda}${selisih} Poin</span>
+            `;
+          }
+
+          document.getElementById('successView').style.display = 'block';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          alert("Perhatian: " + res.pesan);
+          btn.disabled = false;
+          btn.textContent = "Kirim Daftar Hadir & Jawaban";
+        }
+      })
+      .catch(function(err) {
+        alert("Terjadi kesalahan sistem: " + err.message);
+        btn.disabled = false;
+        btn.textContent = "Kirim Daftar Hadir & Jawaban";
+      });
+  }
+</script>
+
+</body>
+</html>
