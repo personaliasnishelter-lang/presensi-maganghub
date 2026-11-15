@@ -497,12 +497,13 @@
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Memverifikasi Lokasi & Mengacak Soal...';
 
-    panggilGAS("mulaiUjianPeserta", {
-      nama: nama,
-      pin: pin,
-      lat: userLat,
-      lng: userLng
-    }).then(function(res) {
+panggilGAS("mulaiUjianPeserta", {
+  nama: nama,
+  pin: pin,
+  lat: userLat,
+  lng: userLng,
+  selfie: dataSelfieBase64
+}).then(function(res) {
       if (!res.sukses) {
         alert(res.pesan);
         btn.disabled = false;
